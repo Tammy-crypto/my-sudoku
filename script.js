@@ -43,7 +43,7 @@ function resetTimer() {
     clearInterval(timerInterval);
     seconds = 0;
     const timerEl = document.getElementById('timer');
-    if (timerEl) timerEl.textContent = "時間 : 00:00";
+    if (timerEl) timerEl.textContent = "時間：00:00";
 }
 
 function updateTimerDisplay() {
@@ -51,7 +51,7 @@ function updateTimerDisplay() {
     if (!timerEl) return;
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
     const secs = (seconds % 60).toString().padStart(2, '0');
-    timerEl.textContent = `時間 : ${mins}:${secs}`;
+    timerEl.textContent = `時間：${mins}:${secs}`;
 }
 
 // 產生數獨題目與解答
@@ -62,11 +62,9 @@ function generateSudoku() {
     board = solution.map(row => [...row]);
     
     const difficultySelect = document.getElementById('difficulty');
-    let holes = 40; // 預設中等
+    let holes = 40;
     if (difficultySelect) {
-        const val = difficultySelect.value;
-        if (val === 'easy') holes = 30;
-        if (val === 'hard') holes = 50;
+        holes = parseInt(difficultySelect.value) || 40;
     }
 
     let removed = 0;
@@ -117,7 +115,7 @@ function isValid(grid, row, col, num) {
     return true;
 }
 
-// 渲染畫布與九宮格
+// 渲染畫布與九宮格（完美對齊 style.css 的 class 樣式）
 function renderBoard() {
     const boardElement = document.getElementById('board');
     if (!boardElement) return;
@@ -126,23 +124,29 @@ function renderBoard() {
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             const input = document.createElement('input');
-            input.type = 'number';
-            input.min = '1';
-            input.max = '9';
+            input.type = 'text';
+            input.inputMode = 'numeric'; // 手機上會自動跳出數字鍵盤
+            input.maxLength = 1;
+            input.classList.add('cell');
             input.dataset.row = r;
             input.dataset.col = c;
+
+            // 第 3 列與第 6 列加上九宮格粗底線
+            if (r === 2 || r === 5) {
+                input.classList.add('bottom-border');
+            }
 
             if (board[r][c] !== 0) {
                 input.value = board[r][c];
                 input.disabled = true;
-                input.classList.add('given');
+                input.classList.add('fixed');
             } else {
                 input.value = '';
+                input.classList.add('user-input');
                 input.addEventListener('input', (e) => {
-                    const val = e.target.value;
-                    if (val < 1 || val > 9) {
-                        e.target.value = '';
-                    }
+                    // 只允許輸入 1~9 的單一數字
+                    const val = e.target.value.replace(/[^1-9]/g, '');
+                    e.target.value = val;
                     
                     // 即時錯誤紅字檢查
                     if (val && parseInt(val) !== solution[r][c]) {
