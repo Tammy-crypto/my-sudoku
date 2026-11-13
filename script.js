@@ -119,7 +119,7 @@ function isValid(grid, row, col, num) {
 
 // 渲染畫布與九宮格
 function renderBoard() {
-    const boardElement = document.getElementById('sudoku-board');
+    const boardElement = document.getElementById('board');
     if (!boardElement) return;
     boardElement.innerHTML = '';
 
@@ -162,7 +162,7 @@ function renderBoard() {
 
 // 自動檢查是否通關
 function autoCheckWin() {
-    const inputs = document.querySelectorAll('#sudoku-board input');
+    const inputs = document.querySelectorAll('#board input');
     if (inputs.length === 0) return;
     let isComplete = true;
 
