@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- 【重要】讓手機自動偵測螢幕大小並正確縮放 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的數獨遊戲</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- 煙火特效畫布 -->
+  <canvas id="fireworks-canvas"></canvas>
+
+  <h1>BEE數獨挑戰</h1>
+
+  <!-- 遊戲控制列 -->
+  <div class="game-info">
+    <div>
+      <label for="difficulty">難度：</label>
+      <select id="difficulty">
+        <option value="30">簡單 (挖 30 格)</option>
+        <option value="40" selected>中等 (挖 40 格)</option>
+        <option value="50">困難 (挖 50 格)</option>
+      </select>
+    </div>
+    <div id="timer">時間：00:00</div>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="controls">
+    <button id="new-game-btn">新遊戲</button>
+    <button id="check-btn">檢查答案</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
