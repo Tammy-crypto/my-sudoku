@@ -7,10 +7,15 @@ let seconds = 0;
 
 // 當網頁載入完成時自動初始化遊戲
 window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('new-game-btn').addEventListener('click', startNewGame);
+    const newGameBtn = document.getElementById('new-game-btn');
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', startNewGame);
+    }
     
-    // 難度選擇變更時自動開新局
-    document.getElementById('difficulty').addEventListener('change', startNewGame);
+    const difficultySelect = document.getElementById('difficulty');
+    if (difficultySelect) {
+        difficultySelect.addEventListener('change', startNewGame);
+    }
     
     startNewGame();
 });
@@ -37,13 +42,16 @@ function startTimer() {
 function resetTimer() {
     clearInterval(timerInterval);
     seconds = 0;
-    document.getElementById('timer').textContent = "時間 : 00:00";
+    const timerEl = document.getElementById('timer');
+    if (timerEl) timerEl.textContent = "時間 : 00:00";
 }
 
 function updateTimerDisplay() {
+    const timerEl = document.getElementById('timer');
+    if (!timerEl) return;
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
     const secs = (seconds % 60).toString().padStart(2, '0');
-    document.getElementById('timer').textContent = `時間 : ${mins}:${secs}`;
+    timerEl.textContent = `時間 : ${mins}:${secs}`;
 }
 
 // 產生數獨題目與解答
@@ -53,10 +61,13 @@ function generateSudoku() {
 
     board = solution.map(row => [...row]);
     
-    const difficultySelect = document.getElementById('difficulty').value;
+    const difficultySelect = document.getElementById('difficulty');
     let holes = 40; // 預設中等
-    if (difficultySelect === 'easy') holes = 30;
-    if (difficultySelect === 'hard') holes = 50;
+    if (difficultySelect) {
+        const val = difficultySelect.value;
+        if (val === 'easy') holes = 30;
+        if (val === 'hard') holes = 50;
+    }
 
     let removed = 0;
     while (removed < holes) {
@@ -109,6 +120,7 @@ function isValid(grid, row, col, num) {
 // 渲染畫布與九宮格
 function renderBoard() {
     const boardElement = document.getElementById('sudoku-board');
+    if (!boardElement) return;
     boardElement.innerHTML = '';
 
     for (let r = 0; r < 9; r++) {
@@ -151,6 +163,7 @@ function renderBoard() {
 // 自動檢查是否通關
 function autoCheckWin() {
     const inputs = document.querySelectorAll('#sudoku-board input');
+    if (inputs.length === 0) return;
     let isComplete = true;
 
     inputs.forEach((input) => {
@@ -158,25 +171,21 @@ function autoCheckWin() {
         const col = parseInt(input.dataset.col);
         const val = parseInt(input.value);
 
-        // 只要有任何一格是空的，或數字跟解答不符，就還沒過關
         if (!val || val !== solution[row][col]) {
             isComplete = false;
         }
     });
 
-    // 全部 81 格都填滿且完全正確！
     if (isComplete) {
-        clearInterval(timerInterval); // 停止計時器
+        clearInterval(timerInterval);
         
-        // 鎖定所有格子防止繼續修改
         inputs.forEach(input => input.disabled = true);
         
-        // 啟動豪華煙火秀！
         launchGrandFireworks();
         
-        // 稍微延遲 0.8 秒再跳出恭喜視窗
         setTimeout(() => {
-            const finalTime = document.getElementById('timer').textContent;
+            const finalTimeEl = document.getElementById('timer');
+            const finalTime = finalTimeEl ? finalTimeEl.textContent : "";
             alert(`🎉 太神啦！全部正確過關！\n你的成績：${finalTime}`);
         }, 800);
     }
@@ -185,6 +194,7 @@ function autoCheckWin() {
 // ================= 豪華版煙火特效系統 =================
 function launchGrandFireworks() {
     const canvas = document.getElementById('fireworks-canvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
