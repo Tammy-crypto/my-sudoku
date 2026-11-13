@@ -1,194 +1,337 @@
+// ================= 數獨遊戲核心邏輯與豪華煙火引擎 =================
+
+let board = [];
 let solution = [];
-let puzzle = [];
 let timerInterval = null;
-let secondsElapsed = 0;
+let seconds = 0;
 
-function isValid(board, row, col, num) {
-  for (let i = 0; i < 9; i++) {
-    if (board[row][i] === num || board[i][col] === num) return false;
-    const boxRow = 3 * Math.floor(row / 3) + Math.floor(i / 3);
-    const boxCol = 3 * Math.floor(col / 3) + (i % 3);
-    if (board[boxRow][boxCol] === num) return false;
-  }
-  return true;
+// 當網頁載入完成時自動初始化遊戲
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('new-game-btn').addEventListener('click', startNewGame);
+    
+    // 難度選擇變更時自動開新局
+    document.getElementById('difficulty').addEventListener('change', startNewGame);
+    
+    startNewGame();
+});
+
+// 開始新遊戲
+function startNewGame() {
+    resetTimer();
+    generateSudoku();
+    renderBoard();
+    startTimer();
 }
 
-function solveSudoku(board) {
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      if (board[row][col] === 0) {
-        const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
-        for (let num of nums) {
-          if (isValid(board, row, col, num)) {
-            board[row][col] = num;
-            if (solveSudoku(board)) return true;
-            board[row][col] = 0;
-          }
-        }
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
+// 計時器功能
 function startTimer() {
-  clearInterval(timerInterval);
-  secondsElapsed = 0;
-  updateTimerDisplay();
-  
-  timerInterval = setInterval(() => {
-    secondsElapsed++;
+    clearInterval(timerInterval);
+    seconds = 0;
     updateTimerDisplay();
-  }, 1000);
+    timerInterval = setInterval(() => {
+        seconds++;
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    seconds = 0;
+    document.getElementById('timer').textContent = "時間 : 00:00";
 }
 
 function updateTimerDisplay() {
-  const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-  const seconds = String(secondsElapsed % 60).padStart(2, '0');
-  document.getElementById('timer').textContent = `時間：${minutes}:${seconds}`;
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    document.getElementById('timer').textContent = `時間 : ${mins}:${secs}`;
 }
 
-function initGame() {
-  solution = Array.from({ length: 9 }, () => Array(9).fill(0));
-  solveSudoku(solution);
+// 產生數獨題目與解答
+function generateSudoku() {
+    solution = Array(9).fill(0).map(() => Array(9).fill(0));
+    solveSudoku(solution);
 
-  puzzle = solution.map(row => [...row]);
-  let holes = parseInt(document.getElementById('difficulty').value);
-  
-  let carved = 0;
-  while (carved < holes) {
-    let r = Math.floor(Math.random() * 9);
-    let c = Math.floor(Math.random() * 9);
-    if (puzzle[r][c] !== 0) {
-      puzzle[r][c] = 0;
-      carved++;
-    }
-  }
-
-  renderBoard();
-  startTimer();
-}
-
-function renderBoard() {
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML = '';
-
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.maxLength = 1;
-      input.className = 'cell';
-
-      if (r === 2 || r === 5) {
-        input.classList.add('bottom-border');
-      }
-
-      if (puzzle[r][c] !== 0) {
-        input.value = puzzle[r][c];
-        input.disabled = true;
-        input.classList.add('fixed');
-      } else {
-        input.classList.add('user-input');
-        input.dataset.row = r;
-        input.dataset.col = c;
-        
-        input.addEventListener('input', (e) => {
-          let val = e.target.value.replace(/[^1-9]/g, '');
-          e.target.value = val;
-
-          if (val === '') {
-            e.target.classList.remove('error');
-          } else {
-            if (parseInt(val) !== solution[r][c]) {
-              e.target.classList.add('error');
-            } else {
-              e.target.classList.remove('error');
-            }
-          }
-        });
-      }
-
-      boardEl.appendChild(input);
-    }
-  }
-}
-
-function checkWin() {
-  const userInputs = document.querySelectorAll('.user-input');
-  for (let input of userInputs) {
-    const r = input.dataset.row;
-    const c = input.dataset.col;
-    if (input.value === '' || parseInt(input.value) !== solution[r][c]) {
-      alert('還沒填完，或是還有格子填錯哦！');
-      return;
-    }
-  }
-  
-  clearInterval(timerInterval);
-  launchFireworks(); // 觸發煙火特效
-  alert(`太厲害了！恭喜全部答對！總共花費時間：${document.getElementById('timer').textContent.replace('時間：', '')}`);
-}
-
-// 【新增】簡易煙火特效引擎
-function launchFireworks() {
-  const canvas = document.getElementById('fireworks-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  let particles = [];
-  
-  // 建立煙火粒子
-  for (let i = 0; i < 150; i++) {
-    particles.push({
-      x: canvas.width / 2 + (Math.random() - 0.5) * 200,
-      y: canvas.height / 2 + (Math.random() - 0.5) * 200,
-      angle: Math.random() * Math.PI * 2,
-      speed: Math.random() * 6 + 2,
-      friction: 0.95,
-      gravity: 0.1,
-      alpha: 1,
-      decay: Math.random() * 0.015 + 0.015,
-      color: `hsl(${Math.random() * 360}, 100%, 50%)`
-    });
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    board = solution.map(row => [...row]);
     
-    let active = false;
-    particles.forEach(p => {
-      if (p.alpha > 0) {
-        active = true;
-        p.speed *= p.friction;
-        p.x += Math.cos(p.angle) * p.speed;
-        p.y += Math.sin(p.angle) * p.speed + p.gravity;
-        p.alpha -= p.decay;
+    const difficultySelect = document.getElementById('difficulty').value;
+    let holes = 40; // 預設中等
+    if (difficultySelect === 'easy') holes = 30;
+    if (difficultySelect === 'hard') holes = 50;
 
-        ctx.save();
-        ctx.globalAlpha = Math.max(p.alpha, 0);
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    });
-
-    if (active) {
-      requestAnimationFrame(animate);
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // 動畫結束清除畫面
+    let removed = 0;
+    while (removed < holes) {
+        let r = Math.floor(Math.random() * 9);
+        let c = Math.floor(Math.random() * 9);
+        if (board[r][c] !== 0) {
+            board[r][c] = 0;
+            removed++;
+        }
     }
-  }
-
-  animate();
 }
 
-document.getElementById('new-game-btn').addEventListener('click', initGame);
-document.getElementById('check-btn').addEventListener('click', checkWin);
-document.getElementById('difficulty').addEventListener('change', initGame);
+// 遞迴數獨解題器
+function solveSudoku(grid) {
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (grid[r][c] === 0) {
+                let nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                for (let num of nums) {
+                    if (isValid(grid, r, c, num)) {
+                        grid[r][c] = num;
+                        if (solveSudoku(grid)) return true;
+                        grid[r][c] = 0;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
-initGame();
+function isValid(grid, row, col, num) {
+    for (let i = 0; i < 9; i++) {
+        if (grid[row][i] === num && i !== col) return false;
+        if (grid[i][col] === num && i !== row) return false;
+    }
+    let startRow = Math.floor(row / 3) * 3;
+    let startCol = Math.floor(col / 3) * 3;
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            let currR = startRow + r;
+            let currC = startCol + c;
+            if (grid[currR][currC] === num && (currR !== row || currC !== col)) return false;
+        }
+    }
+    return true;
+}
+
+// 渲染畫布與九宮格
+function renderBoard() {
+    const boardElement = document.getElementById('sudoku-board');
+    boardElement.innerHTML = '';
+
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.max = '9';
+            input.dataset.row = r;
+            input.dataset.col = c;
+
+            if (board[r][c] !== 0) {
+                input.value = board[r][c];
+                input.disabled = true;
+                input.classList.add('given');
+            } else {
+                input.value = '';
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    if (val < 1 || val > 9) {
+                        e.target.value = '';
+                    }
+                    
+                    // 即時錯誤紅字檢查
+                    if (val && parseInt(val) !== solution[r][c]) {
+                        e.target.classList.add('error');
+                    } else {
+                        e.target.classList.remove('error');
+                    }
+
+                    // 每次填寫完自動檢查是否全部正確過關
+                    autoCheckWin();
+                });
+            }
+            boardElement.appendChild(input);
+        }
+    }
+}
+
+// 自動檢查是否通關
+function autoCheckWin() {
+    const inputs = document.querySelectorAll('#sudoku-board input');
+    let isComplete = true;
+
+    inputs.forEach((input) => {
+        const row = parseInt(input.dataset.row);
+        const col = parseInt(input.dataset.col);
+        const val = parseInt(input.value);
+
+        // 只要有任何一格是空的，或數字跟解答不符，就還沒過關
+        if (!val || val !== solution[row][col]) {
+            isComplete = false;
+        }
+    });
+
+    // 全部 81 格都填滿且完全正確！
+    if (isComplete) {
+        clearInterval(timerInterval); // 停止計時器
+        
+        // 鎖定所有格子防止繼續修改
+        inputs.forEach(input => input.disabled = true);
+        
+        // 啟動豪華煙火秀！
+        launchGrandFireworks();
+        
+        // 稍微延遲 0.8 秒再跳出恭喜視窗
+        setTimeout(() => {
+            const finalTime = document.getElementById('timer').textContent;
+            alert(`🎉 太神啦！全部正確過關！\n你的成績：${finalTime}`);
+        }, 800);
+    }
+}
+
+// ================= 豪華版煙火特效系統 =================
+function launchGrandFireworks() {
+    const canvas = document.getElementById('fireworks-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let rockets = [];
+    let particles = [];
+    let animationId;
+    const colors = [
+        ['#FF1461', '#FF758F'], // 亮粉紅漸層
+        ['#18FF92', '#80FFDB'], // 翡翠綠漸層
+        ['#5A87FF', '#A0C4FF'], // 寶石藍漸層
+        ['#FBF38C', '#FFD166'], // 璀璨金漸層
+        ['#FF9F1C', '#FFBF69'], // 琥珀橘漸層
+        ['#C77DFF', '#E0AAFF']  // 夢幻紫漸層
+    ];
+
+    class Rocket {
+        constructor() {
+            this.x = Math.random() * (canvas.width * 0.7) + canvas.width * 0.15;
+            this.y = canvas.height;
+            this.targetY = Math.random() * (canvas.height * 0.35) + canvas.height * 0.1;
+            this.speed = Math.random() * 4 + 9;
+            this.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.25;
+            this.vx = Math.cos(this.angle) * this.speed;
+            this.vy = Math.sin(this.angle) * this.speed;
+            this.colorPair = colors[Math.floor(Math.random() * colors.length)];
+            this.trail = [];
+        }
+
+        update() {
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 6) this.trail.shift();
+
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.12;
+
+            if (this.vy >= -1 || this.y <= this.targetY) {
+                createExplosion(this.x, this.y, this.colorPair);
+                return false;
+            }
+            return true;
+        }
+
+        draw() {
+            ctx.beginPath();
+            if (this.trail.length > 0) {
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                ctx.lineTo(this.x, this.y);
+            }
+            ctx.strokeStyle = this.colorPair[0];
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color, speed, angle, size, decay) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.alpha = 1;
+            this.decay = decay || (Math.random() * 0.015 + 0.01);
+            this.gravity = 0.06;
+            this.friction = 0.96;
+            this.size = size || 2.5;
+            this.twinkle = Math.random() > 0.5;
+        }
+
+        update() {
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.alpha -= this.decay;
+            return this.alpha > 0;
+        }
+
+        draw() {
+            ctx.save();
+            const currentAlpha = this.twinkle && Math.random() > 0.7 ? this.alpha * 0.3 : this.alpha;
+            ctx.globalAlpha = Math.max(0, currentAlpha);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function createExplosion(x, y, colorPair) {
+        const outerCount = 80;
+        for (let i = 0; i < outerCount; i++) {
+            const angle = (Math.PI * 2 / outerCount) * i + (Math.random() - 0.5) * 0.1;
+            const speed = Math.random() * 5 + 4;
+            particles.push(new Particle(x, y, colorPair[0], speed, angle, 2.8, 0.012));
+        }
+        const innerCount = 40;
+        for (let i = 0; i < innerCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 3 + 1;
+            particles.push(new Particle(x, y, colorPair[1], speed, angle, 2, 0.018));
+        }
+    }
+
+    function animate() {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'lighter';
+
+        rockets = rockets.filter(rocket => {
+            rocket.draw();
+            return rocket.update();
+        });
+
+        particles = particles.filter(particle => {
+            particle.draw();
+            return particle.update();
+        });
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => rockets.push(new Rocket()), i * 250);
+    }
+
+    const launchInterval = setInterval(() => {
+        rockets.push(new Rocket());
+        if (Math.random() > 0.4) {
+            setTimeout(() => rockets.push(new Rocket()), 150);
+        }
+    }, 450);
+
+    setTimeout(() => {
+        clearInterval(launchInterval);
+        setTimeout(() => {
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 2500);
+    }, 4500);
+}
